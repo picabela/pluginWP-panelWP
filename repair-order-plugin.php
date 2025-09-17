@@ -41,6 +41,9 @@ class RepairOrderPlugin {
             new RepairOrderAdmin();
         }
         
+        // Helper utilities shared across frontend/admin
+        require_once REPAIR_ORDER_PLUGIN_PATH . 'includes/sandbox-helper.php';
+
         // Initialize frontend
         require_once REPAIR_ORDER_PLUGIN_PATH . 'includes/frontend.php';
         new RepairOrderFrontend();
@@ -178,26 +181,18 @@ class RepairOrderPlugin {
     }
     
     private function simulate_payment($order_id) {
-        global $wpdb;
-        
-        // Update order status to paid
-        $wpdb->update(
-            $wpdb->prefix . 'repair_orders',
-            array(
-                'payment_status' => 'paid',
-                'payment_date' => current_time('mysql')
-            ),
-            array('order_id' => $order_id),
-            array('%s', '%s'),
-            array('%s')
-        );
-        
-        // Generate InPost label
-        require_once REPAIR_ORDER_PLUGIN_PATH . 'includes/api-handler.php';
-        $api_handler = new RepairOrderAPIHandler();
-        $label_result = $api_handler->create_inpost_shipment($order_id);
-        
-        // Redirect to confirmation
+        $order = RepairOrderDatabase::get_order_by_id($order_id);
+
+        if ($order && $order->payment_status !== 'paid') {
+            RepairOrderDatabase::update_order($order_id, array(
+                'payment_status' => 'paid'
+            ));
+        }
+
+        if ($order) {
+            RepairOrderSandboxHelper::generate_simulated_shipment($order);
+        }
+
         wp_redirect(home_url('/zamowienie/potwierdzenie/' . $order_id));
         exit;
     }

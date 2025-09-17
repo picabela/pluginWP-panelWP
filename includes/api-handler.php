@@ -11,26 +11,28 @@ class RepairOrderAPIHandler {
     
     public function __construct() {
         $sandbox_mode = get_option('repair_order_sandbox_mode', 1);
-        $this->api_base_url = $sandbox_mode ? 'https://api-shipx-pl.easypack24.net/v1/' : 'https://api-shipx-pl.easypack24.net/v1/';
+        $this->api_base_url = $sandbox_mode ? 'https://sandbox-api-shipx-pl.easypack24.net/v1/' : 'https://api-shipx-pl.easypack24.net/v1/';
         $this->api_token = get_option('repair_order_inpost_api_token');
         $this->organization_id = get_option('repair_order_inpost_organization_id');
-        
-        add_action('wp_ajax_generate_shipment', array($this, 'generate_shipment'));
-        add_action('wp_ajax_nopriv_generate_shipment', array($this, 'generate_shipment'));
     }
-    
-    public function generate_shipment() {
-        check_ajax_referer('repair_order_frontend_nonce', 'nonce');
-        
-        $order_id = sanitize_text_field($_POST['order_id']);
-        $order = RepairOrderDatabase::get_order_by_id($order_id);
-        
-        if (!$order || $order->payment_status !== 'paid') {
-            wp_send_json_error('Zamówienie nie zostało opłacone');
-            return;
+
+    public function create_inpost_shipment($order) {
+        if (is_string($order) || is_numeric($order)) {
+            $order = RepairOrderDatabase::get_order_by_id($order);
         }
-        
-        // Prepare shipment data
+
+        if (!$order) {
+            return new WP_Error('repair_order_not_found', 'Zamówienie nie zostało znalezione');
+        }
+
+        if ($order->payment_status !== 'paid') {
+            return new WP_Error('repair_order_not_paid', 'Zamówienie nie zostało opłacone');
+        }
+
+        if (empty($this->api_token) || empty($this->organization_id)) {
+            return new WP_Error('repair_order_missing_credentials', 'Brak konfiguracji API InPost');
+        }
+
         $shipment_data = array(
             'receiver' => array(
                 'name' => $order->customer_name,
@@ -54,34 +56,38 @@ class RepairOrderAPIHandler {
             'reference' => $order->order_id,
             'comments' => 'Zwrot po naprawie: ' . $order->service_description
         );
-        
-        // Create shipment via InPost API
+
         $response = $this->make_api_request('organizations/' . $this->organization_id . '/shipments', 'POST', $shipment_data);
-        
-        if ($response && isset($response['id'])) {
-            // Update order with shipment data
-            RepairOrderDatabase::update_order($order_id, array(
-                'inpost_shipment_id' => $response['id'],
-                'tracking_number' => $response['tracking_number'],
-                'repair_status' => 'shipped'
-            ));
-            
-            // Generate label
-            $label_response = $this->make_api_request('shipments/' . $response['id'] . '/label', 'GET');
-            
-            if ($label_response && isset($label_response['url'])) {
-                RepairOrderDatabase::update_order($order_id, array(
-                    'label_url' => $label_response['url']
-                ));
-            }
-            
-            wp_send_json_success(array(
-                'tracking_number' => $response['tracking_number'],
-                'label_url' => isset($label_response['url']) ? $label_response['url'] : null
-            ));
-        } else {
-            wp_send_json_error('Błąd podczas tworzenia przesyłki');
+
+        if (!$response || empty($response['id'])) {
+            return new WP_Error('repair_order_shipment_failed', 'Błąd podczas tworzenia przesyłki');
         }
+
+        $update_data = array(
+            'inpost_shipment_id' => $response['id'],
+            'repair_status' => 'shipped'
+        );
+
+        if (!empty($response['tracking_number'])) {
+            $update_data['tracking_number'] = $response['tracking_number'];
+        }
+
+        RepairOrderDatabase::update_order($order->order_id, $update_data);
+
+        $label_url = '';
+        $label_response = $this->make_api_request('shipments/' . $response['id'] . '/label', 'GET');
+
+        if ($label_response && !empty($label_response['url'])) {
+            $label_url = $label_response['url'];
+            RepairOrderDatabase::update_order($order->order_id, array(
+                'label_url' => $label_url
+            ));
+        }
+
+        return array(
+            'tracking_number' => $update_data['tracking_number'] ?? '',
+            'label_url' => $label_url
+        );
     }
     
     private function make_api_request($endpoint, $method = 'GET', $data = null) {
