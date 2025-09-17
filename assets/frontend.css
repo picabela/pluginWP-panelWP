@@ -1,0 +1,280 @@
+/* Updated color scheme to orange-brown theme and simplified form layout */
+.repair-order-form-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.repair-service-info {
+  background: linear-gradient(135deg, #f4f1eb 0%, #faf8f3 100%);
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border-left: 4px solid #d2691e;
+}
+
+.repair-service-info h3 {
+  margin: 0 0 15px 0;
+  color: #8b4513;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.service-details p {
+  margin: 8px 0;
+  font-size: 16px;
+  color: #5d4037;
+}
+
+.service-details strong {
+  color: #d2691e;
+}
+
+/* Simplified form section styling for essential fields only */
+.repair-form .form-section {
+  margin-bottom: 25px;
+  padding: 25px;
+  border: 2px solid #f5e6d3;
+  border-radius: 8px;
+  background: #fefcf9;
+}
+
+.repair-form .form-section h4 {
+  margin: 0 0 20px 0;
+  color: #8b4513;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 2px solid #d2691e;
+  padding-bottom: 10px;
+}
+
+.form-row {
+  margin-bottom: 20px;
+}
+
+.form-row label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #5d4037;
+  font-size: 15px;
+}
+
+.form-row input[type="text"],
+.form-row input[type="email"],
+.form-row input[type="tel"],
+.form-row textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e8d5c4;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.form-row input:focus,
+.form-row textarea:focus {
+  outline: none;
+  border-color: #d2691e;
+  box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
+  background: #fefefe;
+}
+
+.form-row input[type="checkbox"] {
+  width: auto;
+  margin-right: 10px;
+  transform: scale(1.2);
+}
+
+.form-row small {
+  display: block;
+  margin-top: 6px;
+  color: #8d6e63;
+  font-size: 14px;
+}
+
+.form-row small a {
+  color: #d2691e;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.form-row small a:hover {
+  text-decoration: underline;
+}
+
+.form-actions {
+  text-align: center;
+  margin-top: 30px;
+}
+
+/* Updated button styling with orange-brown theme */
+.submit-btn,
+.payment-btn,
+.shipment-btn {
+  background: linear-gradient(135deg, #d2691e 0%, #cd853f 100%);
+  color: white;
+  padding: 16px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(210, 105, 30, 0.3);
+}
+
+.submit-btn:hover,
+.payment-btn:hover,
+.shipment-btn:hover {
+  background: linear-gradient(135deg, #b8621b 0%, #b8860b 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(210, 105, 30, 0.4);
+}
+
+.submit-btn:disabled,
+.payment-btn:disabled,
+.shipment-btn:disabled {
+  background: #d7ccc8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Order page styles */
+.repair-order-page {
+  padding: 40px 20px;
+  background: #faf8f3;
+  min-height: 100vh;
+}
+
+.repair-order-page .container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.repair-order-page h1 {
+  color: #8b4513;
+  margin-bottom: 30px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.order-summary {
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.service-info {
+  background: linear-gradient(135deg, #f4f1eb 0%, #faf8f3 100%);
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border-left: 4px solid #d2691e;
+}
+
+.service-info h3 {
+  margin: 0 0 15px 0;
+  color: #8b4513;
+  font-weight: 600;
+}
+
+.payment-section,
+.shipping-section {
+  margin-top: 30px;
+  padding: 25px;
+  border: 2px solid #f5e6d3;
+  border-radius: 8px;
+  background: #fefcf9;
+}
+
+.payment-section h3,
+.shipping-section h3 {
+  margin: 0 0 20px 0;
+  color: #8b4513;
+  font-weight: 600;
+}
+
+.payment-form p {
+  font-size: 18px;
+  color: #5d4037;
+  margin-bottom: 20px;
+}
+
+.success-message {
+  color: #2e7d32;
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.download-label-btn {
+  background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 10px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.download-label-btn:hover {
+  background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+/* Loading states */
+.btn-loading {
+  display: none;
+}
+
+.loading .btn-text {
+  display: none;
+}
+
+.loading .btn-loading {
+  display: inline;
+}
+
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .repair-order-form-container,
+  .repair-order-page .container {
+    margin: 0 10px;
+    padding: 15px;
+  }
+
+  .repair-form .form-section {
+    padding: 20px;
+  }
+
+  .submit-btn,
+  .payment-btn,
+  .shipment-btn {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .repair-service-info,
+  .service-info {
+    padding: 20px;
+  }
+}
