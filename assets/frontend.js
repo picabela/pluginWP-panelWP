@@ -98,10 +98,19 @@
           console.log("[v0] Payment simulation response:", response)
 
           if (response.success) {
-            alert("Płatność została zrealizowana pomyślnie!")
-            setTimeout(() => {
-              location.reload()
-            }, 1000)
+            const data = response.data || {}
+
+            if (data.message) {
+              alert(data.message)
+            }
+
+            if (data.redirect_url) {
+              window.location.href = data.redirect_url
+            } else {
+              setTimeout(() => {
+                location.reload()
+              }, 1000)
+            }
           } else {
             alert("Błąd podczas przetwarzania płatności: " + response.data)
             // Reset button state

@@ -531,59 +531,97 @@ class RepairOrderFrontend {
     
     public function simulate_payment() {
         check_ajax_referer('repair_order_frontend_nonce', 'nonce');
-        
+
         $order_id = sanitize_text_field($_POST['order_id']);
-        
+
         $order = RepairOrderDatabase::get_order_by_id($order_id);
         if (!$order) {
             wp_send_json_error('Zamówienie nie zostało znalezione');
         }
-        
+
+        $already_paid = ($order->payment_status === 'paid');
+
         // Simulate payment processing delay
         sleep(2);
-        
-        // Update payment status
-        RepairOrderDatabase::update_order($order_id, array(
-            'payment_status' => 'paid'
-        ));
-        
-        $this->send_payment_confirmation_email($order);
-        
+
+        if (!$already_paid) {
+            RepairOrderDatabase::update_order($order_id, array(
+                'payment_status' => 'paid'
+            ));
+            $order = RepairOrderDatabase::get_order_by_id($order_id);
+        }
+
+        $shipment_data = array('tracking_number' => '', 'label_url' => '');
+
+        if ($this->should_use_sandbox_mode()) {
+            $shipment_data = RepairOrderSandboxHelper::generate_simulated_shipment($order);
+            $order = RepairOrderDatabase::get_order_by_id($order_id);
+        }
+
+        if (!$already_paid) {
+            $this->send_payment_confirmation_email($order);
+        }
+
+        if (!empty($shipment_data['tracking_number'])) {
+            $this->send_shipping_notification_email($order, $shipment_data['tracking_number'], $shipment_data['label_url']);
+        }
+
         wp_send_json_success(array(
             'message' => 'Płatność została zrealizowana pomyślnie',
-            'redirect_url' => home_url('/zamowienie/' . $order_id)
+            'redirect_url' => home_url('/zamowienie/potwierdzenie/' . $order_id),
+            'tracking_number' => $shipment_data['tracking_number'] ?? '',
+            'label_url' => $shipment_data['label_url'] ?? ''
         ));
     }
-    
+
     public function generate_shipment() {
         check_ajax_referer('repair_order_frontend_nonce', 'nonce');
-        
+
         $order_id = sanitize_text_field($_POST['order_id']);
         $order = RepairOrderDatabase::get_order_by_id($order_id);
-        
+
         if (!$order) {
             wp_send_json_error('Zamówienie nie zostało znalezione');
         }
-        
-        // Generate tracking number and label
-        $tracking_number = 'INP' . wp_generate_password(12, false, false);
-        $label_url = home_url('/wp-content/uploads/repair-orders/label-' . $order_id . '.pdf');
-        
-        // Update order with shipping info
-        RepairOrderDatabase::update_order($order_id, array(
-            'tracking_number' => $tracking_number,
-            'label_url' => $label_url,
-            'repair_status' => 'shipped'
-        ));
-        
-        // Send email with tracking info
-        $this->send_shipping_notification_email($order, $tracking_number, $label_url);
-        
-        wp_send_json_success(array(
-            'tracking_number' => $tracking_number,
-            'label_url' => $label_url,
-            'message' => 'Etykieta została wygenerowana'
-        ));
+
+        if ($order->payment_status !== 'paid') {
+            wp_send_json_error('Zamówienie nie zostało opłacone');
+        }
+
+        $shipment_data = array('tracking_number' => '', 'label_url' => '');
+
+        if ($this->should_use_sandbox_mode()) {
+            $shipment_data = RepairOrderSandboxHelper::generate_simulated_shipment($order);
+        } else {
+            $api_handler = new RepairOrderAPIHandler();
+            $shipment_data = $api_handler->create_inpost_shipment($order);
+
+            if (is_wp_error($shipment_data)) {
+                wp_send_json_error($shipment_data->get_error_message());
+            }
+        }
+
+        $order = RepairOrderDatabase::get_order_by_id($order_id);
+
+        if (!empty($shipment_data['tracking_number'])) {
+            $this->send_shipping_notification_email($order, $shipment_data['tracking_number'], $shipment_data['label_url'] ?? '');
+
+            wp_send_json_success(array(
+                'tracking_number' => $shipment_data['tracking_number'],
+                'label_url' => $shipment_data['label_url'] ?? '',
+                'message' => 'Etykieta została wygenerowana'
+            ));
+        }
+
+        wp_send_json_error('Nie udało się wygenerować etykiety');
+    }
+
+    private function should_use_sandbox_mode() {
+        $sandbox_mode = intval(get_option('repair_order_sandbox_mode', 1));
+        $api_token = trim((string) get_option('repair_order_inpost_api_token'));
+        $organization_id = trim((string) get_option('repair_order_inpost_organization_id'));
+
+        return $sandbox_mode === 1 || empty($api_token) || empty($organization_id);
     }
     
     private function send_payment_confirmation_email($order) {
